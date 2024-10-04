@@ -1,0 +1,5 @@
+require("better_escape").setup {
+  mapping = {"jk"}, -- Keybinding to escape
+  timeout = 500,    -- Time in milliseconds to wait for the second key
+}
+
