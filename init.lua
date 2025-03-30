@@ -32,6 +32,7 @@ require('packer').startup(function(use)
   use 'lukas-reineke/indent-blankline.nvim'    -- Indentation guides
   use 'windwp/nvim-autopairs'                  -- Automatically close brackets and quotes
   use 'ThePrimeagen/vim-be-good'
+  use 'mattn/emmet-vim'
 end)
 
 -- Basic Settings
@@ -45,6 +46,8 @@ vim.g.mapleader = " "                          -- Set space as the leader key
 vim.opt.clipboard = "unnamedplus"              -- Use the system clipboard
 vim.opt.updatetime = 300
 vim.opt.lazyredraw = true
+
+vim.g.user_emmet_leader_key = '<C-y>'  -- Default expansion key for emmet 
 
 -- Key Mappings
 vim.api.nvim_set_keymap('n', '<leader>e', ':NvimTreeToggle<CR>', { noremap = true, silent = true }) -- Toggle file explorer
@@ -67,13 +70,14 @@ require('mason').setup()
 
 -- Mason LSP Config Setup
 require('mason-lspconfig').setup {
-  ensure_installed = { 'pylsp', 'clangd', 'asm_lsp', 'bashls', 'rust_analyzer', 'html', 'cssls','sqls', 'ts_ls'}, -- Automatically install these servers
+  ensure_installed = { 'emmet_ls', 'pylsp', 'clangd', 'asm_lsp', 'bashls', 'rust_analyzer', 'html', 'cssls','sqls', 'ts_ls'}, -- Automatically install these servers
 }
 
 -- LSP Configuration
 local lspconfig = require('lspconfig')
 local capabilities = require('cmp_nvim_lsp').default_capabilities()
 capabilities.textDocument.completion.completionItem.snippetSupport = true
+ 
 -- Function that runs when LSP attaches to a buffer
 local on_attach = function(client, bufnr)
   -- General LSP key mappings
@@ -109,15 +113,31 @@ local on_attach = function(client, bufnr)
   end
 end
 
--- Setup handlers for Mason-managed LSP servers
 require('mason-lspconfig').setup_handlers({
   function (server_name)
     lspconfig[server_name].setup {
       capabilities = capabilities,
       on_attach = on_attach,
     }
-  end
+  end,
+
+  -- Specific Emmet LSP setup
+  ["emmet_ls"] = function()
+    lspconfig.emmet_ls.setup({
+      capabilities = capabilities,
+      on_attach = on_attach,
+      filetypes = { "html", "css", "typescriptreact", "javascriptreact" }, -- adjust as needed
+      init_options = {
+        html = {
+          options = {
+            ["bem.enabled"] = true,
+          },
+        },
+      },
+    })
+  end,
 })
+
 
 -- High CPU Usage Fix
 local ok, wf = pcall(require, "vim.lsp._watchfiles")
@@ -129,9 +149,16 @@ end
 
 -- Better Escape
 require("better_escape").setup {
-  timeout = vim.o.timeoutlen,
-  default_mappings = false,
-  mappings = { i = { j = { k = "<Esc>" } } },
+timeout = vim.o.timeoutlen,
+default_mappings = false,
+mappings = { 
+  i = { 
+    j = { k = "<Esc>" }, 
+    k = { j = "<Esc>" },
+    J = { K = "<Esc>" },
+    K = { J = "<Esc>" }
+  } 
+},
 }
 
 -- Treesitter Configuration
@@ -172,6 +199,10 @@ require('gitsigns').setup()
 
 -- Indentation Guides
 require('ibl').setup {}
+
+-- Autopairs Configuration
+require('nvim-autopairs').setup{}
+
 
 -- Autopairs Configuration
 require('nvim-autopairs').setup{}
